@@ -1,12 +1,10 @@
 var express = require('express');
 var app = express();
 
-app.get('/', (req, res, next) => {
+var retornos = require('../respuestas/retornos');
 
-    res.status(200).json({
-        ok: true,
-        mensaje: 'Petición realizada correctamente'
-    });
+app.get('/', (req, res, next) => {
+    retornos.status_200(res, 'Petición realizada correctamente');
 });
 
 module.exports = app;

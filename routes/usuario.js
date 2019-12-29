@@ -4,6 +4,8 @@ var jwt = require('jsonwebtoken');
 
 var mdAuthenticacion = require('../middlewares/autenticacion');
 
+var retornos = require('../respuestas/retornos');
+
 var app = express();
 
 var Usuario = require('../models/usuario');
@@ -15,23 +17,22 @@ var Usuario = require('../models/usuario');
 
 app.get('/', (req, res, next) => {
 
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+
     Usuario.find({}, 'nombre email img role')
+        .skip(desde)
+        .limit(5)
         .exec(
             (err, usuarios) => {
 
                 if (err) {
-                    return res.status(500).json({
-                        ok: false,
-                        mensaje: 'Error cargando usuarios',
-                        errors: err
-                    });
+                    retornos.status_500(res, 'Error cargando usuarios', err);
                 }
 
-                res.status(200).json({
-                    ok: true,
-                    usuarios: usuarios // esto se podría devolver solo con usuarios
+                Usuario.count({}, (err, conteo) => {
+                    retornos.status_200(res, usuarios, 'usuarios', conteo);
                 });
-
             });
 });
 
@@ -48,19 +49,11 @@ app.put('/:id', mdAuthenticacion.verificaToken, (req, res) => {
     Usuario.findById(id, (err, usuario) => {
 
         if (err) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al buscar usuario',
-                errors: err
-            });
+            retornos.status_500(res, 'Error al buscar usuario', err);
         }
 
         if (!usuario) {
-            return res.status(400).json({
-                ok: false,
-                mensaje: 'El usuario con el id: ' + id + ' no existe',
-                errors: { message: 'No existe un usuario con ese ID' }
-            });
+            retornos.status_404(res, 'El usuario con el id: ' + id + ' no existe');
         }
 
         usuario.nombre = body.nombre;
@@ -70,19 +63,12 @@ app.put('/:id', mdAuthenticacion.verificaToken, (req, res) => {
         usuario.save((err, usuarioGuardado) => {
 
             if (err) {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: 'Error al actualizar usuario',
-                    errors: err
-                });
+                retornos.status_400(res, 'Error al actualizar usuario', err)
             }
 
             usuarioGuardado.password = ':)';
 
-            res.status(200).json({
-                ok: true,
-                usuarios: usuarioGuardado
-            });
+            retornos.status_200(res, usuarios, 'usuario');
 
         });
 
@@ -113,20 +99,12 @@ app.post('/', mdAuthenticacion.verificaToken, (req, res) => {
 
         //si se genera un error
         if (err) {
-            return res.status(400).json({
-                ok: false,
-                mensaje: 'Error al crear usuario',
-                errors: err
-            });
+            retornos.status_400(res, 'Error al crear usuario', err);
         }
 
         // si todo ha ido bien, se devuelve el usuario creado
-        res.status(201).json({
-            ok: true,
-            usuario: usuarioGuardado,
-            usuariotoken: req.usuario
-        });
-
+        usuarioGuardado.password = "=)";
+        retornos.status_201(res, usuarioGuardado, req.usuario);
     });
 });
 
@@ -141,26 +119,14 @@ app.delete('/:id', mdAuthenticacion.verificaToken, (req, res) => {
     Usuario.findOneAndRemove(id, (err, usuarioBorrado) => {
 
         if (err) {
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al borrar usuario',
-                errors: err
-            });
+            retornos.status_500(res, 'Error al borrar usuario', err);
         }
 
         if (!usuarioBorrado) {
-            return res.status(400).json({
-                ok: false,
-                mensaje: 'No existe usuario con ese id',
-                errors: { message: 'No existe el usuario con ese id' }
-            });
+            retornos.status_404(res, 'No existe usuario con el id : ' + id);
         }
 
-        res.status(200).json({
-            ok: true,
-            usuario: usuarioBorrado
-        });
-
+        retornos.status_200(res, usuarioBorrado, 'usuario');
     });
 });
 

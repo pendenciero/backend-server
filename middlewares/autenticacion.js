@@ -2,8 +2,10 @@ var jwt = require('jsonwebtoken');
 
 var SEED = require('../config/config').SEED;
 
+var retornos = require('../respuestas/retornos');
+
 // ================================================
-// Verificar Token (Middleware)
+// Verificar Token
 // ================================================
 
 exports.verificaToken = function(req, res, next) {
@@ -13,11 +15,13 @@ exports.verificaToken = function(req, res, next) {
     jwt.verify(token, SEED, (err, decoded) => {
 
         if (err) {
-            return res.status(401).json({
-                ok: false,
-                mensaje: 'Token incorrecto',
-                errors: err
-            });
+            retornos.status_401(res, 'Token incorrecto', err);
+
+            // return res.status(401).json({
+            //     ok: false,
+            //     mensaje: 'Token incorrecto',
+            //     errors: err
+            // });
         }
 
         req.usuario = decoded.usuario;
